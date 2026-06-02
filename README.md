@@ -1,8 +1,4 @@
-# Numerical Linear Algebra Project
-### LMAC · Instituto Superior Técnico · 2025/26
 
-**Authors:** Gil Jorge (110062) · Gonçalo Girante  
-**Course:** Álgebra Linear Numérica — 4º Trimestre
 
 ---
 
@@ -12,14 +8,7 @@ This project implements four core numerical linear algebra algorithms in MATLAB,
 
 All code is contained in a single file (`projeto_ALN_2026.m`) structured as a MATLAB Live Script, with sections corresponding to each question of the project statement.
 
----
 
-## Contents
-
-| File | Description |
-|------|-------------|
-| `projeto_ALN_2026.m` | Main script — all functions and driver code |
-| `Projeto1_ALN_2026.pdf` | Project statement |
 
 ---
 
@@ -100,43 +89,3 @@ Accuracy degrades for $n \geq 12$ as the matrix approaches numerical singularity
 **Lehmer matrices** $L_n$, $n = 10, 100, \ldots, 500$: the power method matches MATLAB's `cond` accurately up to $n = 200$; the inverse power method requires significantly more iterations as $n$ grows (up to 800 iterations for $n = 500$).
 
 ---
-
-## Local Functions
-
-| Function | Description |
-|----------|-------------|
-| `ns_iterate` | Newton-Schulz iteration |
-| `comp_conv_order` | Computational convergence order |
-| `tridiag_An` | Constructs the tridiagonal test matrix $A_n$ |
-| `lehmer` | Constructs the Lehmer matrix $L_n$ |
-| `house_qr` | Householder QR decomposition |
-| `pow_max` | Power method (dominant eigenvalue) |
-| `pow_min` | Inverse power method (smallest eigenvalue, via LU) |
-| `print_ns_result` | Formatted output for Newton-Schulz runs |
-
----
-
-## Requirements
-
-- MATLAB R2020a or later (no additional toolboxes required)
-- For Question 3, place your image files in the same directory and update `img_gray_file` and `img_color_file` at the top of the Q3 section
-
----
-
-## Running the Code
-
-Open `projeto_ALN_2026.m` in MATLAB and run it section by section (using the `%%` section breaks), or run the entire file at once. Results are printed to the Command Window with `format long` precision. Figures are generated for the image compression (Q3) and power method convergence (Q4) sections.
-
-```matlab
-% Run everything
-run('projeto_ALN_2026.m')
-
-% Or open as a Live Script
-% File > Open > projeto_ALN_2026.m
-```
-
----
-
-## Academic Context
-
-This project was submitted as part of the *Álgebra Linear Numérica* course at [Instituto Superior Técnico](https://tecnico.ulisboa.pt), Universidade de Lisboa, in the 4th trimester of 2025/26.
