@@ -1,49 +1,19 @@
-%% Projeto de Álgebra Linear Numérica – LMAC 2025/26
-%  Autores: Gil Jorge 110062 | Gonçalo Girante
-%  Instituto Superior Técnico – Departamento de Matemática
-%
-%  Este ficheiro único contém todo o código do projeto (funções e scripts),
-%  estruturado em secções numeradas correspondentes às questões do enunciado.
-%  Pode ser aberto como Live Script no MATLAB (File > Open > seleccionar este .m).
-%
-%  NOTA: Antes de executar a Questão 3, coloque dois ficheiros de imagem na
-%  mesma pasta e actualize os nomes nas variáveis img_gray_file e img_color_file.
-
 format long;
-
-%% ================================================================
-%  QUESTÃO 1 – Método de Newton-Schulz
-%% ================================================================
-% A sucessão X_{k+1} = 2X_k - X_k A X_k converge quadraticamente para A^{-1}
-% quando rho(I - A X_0) < 1.
-%
-% PROVA 1a)  R_{k+1} = I - A X_{k+1}
-%                     = I - A(2X_k - X_k A X_k)
-%                     = I - 2 A X_k + (A X_k)^2
-%                     = (I - A X_k)^2  =  R_k^2
-% Portanto  ||R_k|| <= ||R_0||^{2^k} -> 0  se  rho(R_0) < 1.
-%
-% PROVA 1b)  Com X_0 = A'/||A||_F^2 :
-%   v.p. de (I - A X_0) = 1 - sigma_i^2 / ||A||_F^2  in [0,1)
-%   pois  ||A||_F^2 = sum(sigma_i^2) > sigma_i^2  para A não singular com n>=2.
-%   Logo rho(I - A X_0) < 1.  QED.
-
-%% --- 1c) Parâmetros e escolha inicial ----------------------------------
+% 1 – Método de Newton-Schulz
+%% 1c Parâmetros e escolha inicial
 maxIter = 200;
 tol     = 1e-12;
-
-%% --- 1d/1e) Vandermonde -----------------------------------------------
+%% 1d/1e) Vandermonde
 fprintf('\n--- Vandermonde V([1,3,5,7,9]) ---\n');
 A_vand  = vander([1, 3, 5, 7, 9]);
 [X, it, errs, ress] = ns_iterate(A_vand, maxIter, tol);
 print_ns_result('Vandermonde', size(A_vand,1), it, errs, ress);
 fprintf('||X - inv(A)||_F = %.6e\n', norm(X - inv(A_vand),'fro'));
-fprintf('Computed inverse (Newton-Schulz):\n'); disp(X);
-fprintf('inv(A) via MATLAB:\n');               disp(inv(A_vand));
-fprintf('Convergence orders: '); disp(comp_conv_order(ress).');
-
-%% --- Tridiagonal An ---------------------------------------------------
-fprintf('\n--- Tridiagonal An ---\n');
+fprintf('Inversa calculada (Newton-Schulz):\n'); disp(X);
+fprintf('inv(A) via MATLAB');                 disp(inv(A_vand));
+fprintf('Ordens de convergência: '); disp(comp_conv_order(ress).');
+%% Tridiagonal An
+fprintf('\n Tridiagonal An \n');
 fprintf('%-6s %-8s %-18s %-18s\n','n','iter','||Xk+1-Xk||_F','||Rk||_F');
 for n = [5, 10, 50, 100, 200]
     A = tridiag_An(n);
@@ -51,12 +21,11 @@ for n = [5, 10, 50, 100, 200]
     fprintf('%-6d %-8d %-18.6e %-18.6e\n', n, it, errs(end), ress(end));
     if n <= 10
         fprintf('  ||X-inv(A)||_F = %.6e\n', norm(X-inv(A),'fro'));
-        fprintf('  Conv. orders: '); disp(comp_conv_order(ress).');
+        fprintf('  Ordens de conv.: '); disp(comp_conv_order(ress).');
     end
 end
-
-%% --- Hilbert Hn -------------------------------------------------------
-fprintf('\n--- Hilbert Hn ---\n');
+%% Hilbert
+fprintf('\n Hilbert Hn\n');
 fprintf('%-6s %-8s %-18s %-18s\n','n','iter','||Xk+1-Xk||_F','||Rk||_F');
 for n = [4, 6, 8, 10, 12]
     A = hilb(n);
@@ -64,12 +33,11 @@ for n = [4, 6, 8, 10, 12]
     fprintf('%-6d %-8d %-18.6e %-18.6e\n', n, it, errs(end), ress(end));
     if n <= 6
         fprintf('  ||X-inv(A)||_F = %.6e\n', norm(X-inv(A),'fro'));
-        fprintf('  Conv. orders: '); disp(comp_conv_order(ress).');
+        fprintf('  Ordens de conv.: '); disp(comp_conv_order(ress).');
     end
 end
-
-%% --- Lehmer Ln --------------------------------------------------------
-fprintf('\n--- Lehmer Ln ---\n');
+%%Lehmer Ln
+fprintf('\nLehmer Ln\n');
 fprintf('%-6s %-8s %-18s %-18s\n','n','iter','||Xk+1-Xk||_F','||Rk||_F');
 for n = [10, 100, 200, 300, 400, 500]
     A = lehmer(n);
@@ -77,23 +45,48 @@ for n = [10, 100, 200, 300, 400, 500]
     fprintf('%-6d %-8d %-18.6e %-18.6e\n', n, it, errs(end), ress(end));
     if n == 10
         fprintf('  ||X-inv(A)||_F = %.6e\n', norm(X-inv(A),'fro'));
-        fprintf('  Conv. orders: '); disp(comp_conv_order(ress).');
+        fprintf('  Ordens de conv.: '); disp(comp_conv_order(ress).');
     end
 end
-
-%% ================================================================
-%  QUESTÃO 2 – Decomposição QR de Householder
-%% ================================================================
-% Algoritmo:  para k = 1,...,n
-%   x = R(k:m, k)
-%   v = x + sign(x_1)*||x||*e_1     (sinal evita cancelamento catastrófico)
-%   v = v/||v||
-%   R(k:m,k:n) -= 2*v*(v'*R(k:m,k:n))
-%   Qt(k:m,:)  -= 2*v*(v'*Qt(k:m,:))   % acumula Q^T
-%  No fim: Q = Qt'  =>  A = Q*R
-
-fprintf('\n=== QUESTÃO 2 – QR de Householder ===\n');
-fprintf('\n--- Lehmer L_{100xn} ---\n');
+%%  Gráficos de Convergência (Exemplo com Matriz Tridiagonal n=10)
+% Configurar uma matriz bem condicionada com boa convergência
+A_plot = tridiag_An(10);
+[~, it_plot, errs_plot, ress_plot] = ns_iterate(A_plot, 200, 1e-12);
+figure('Name', 'Convergência Newton-Schulz', 'Position', [100, 100, 900, 400]);
+% Subplot 1: Erros ao longo do tempo (Escala Logarítmica)
+subplot(1, 2, 1);
+semilogy(0:it_plot, errs_plot, 'b-o', 'LineWidth', 1.5, 'MarkerFaceColor', 'b');
+hold on;
+semilogy(0:it_plot, ress_plot, 'r-s', 'LineWidth', 1.5, 'MarkerFaceColor', 'r');
+grid on;
+xlabel('Iteração (k)');
+ylabel('Erro');
+title('Evolução do Erro (Escala Logarítmica)');
+legend('||X_{k+1} - X_k||_F', '||R_k||_F', 'Location', 'southwest');
+% Subplot 2: Verificação da Convergência Quadrática
+% Gráfico de R_{k+1} vs R_k numa escala log-log. Um declive de 2 prova a convergência quadrática.
+subplot(1, 2, 2);
+% Extrair R_k e R_{k+1} (ignorando valores zero/NaN no final)
+R_k = ress_plot(1:end-1);
+R_k1 = ress_plot(2:end);
+% Traçar os dados experimentais
+loglog(R_k, R_k1, 'k-o', 'LineWidth', 1.5, 'MarkerFaceColor', 'k');
+hold on;
+% Criar uma linha de referência teórica (Declive = 2 no espaço log-log)
+% Estimamos a constante C usando as duas primeiras iterações
+C_est = R_k1(1) / (R_k(1)^2);
+ref_x = logspace(log10(min(R_k)), log10(max(R_k)), 20);
+ref_y = C_est * (ref_x.^2);
+% Traçar a linha de referência
+loglog(ref_x, ref_y, 'b--', 'LineWidth', 1.5);
+grid on;
+xlabel('||R_k||_F');
+ylabel('||R_{k+1}||_F');
+title('Verificação Quadrática (R_{k+1} vs R_k)');
+legend('Dados Experimentais', 'Referência Quadrática (Declive 2)', 'Location', 'northwest');
+sgtitle('Análise de Convergência do Método de Newton-Schulz');
+%2 – Decomposição QR de Householder
+fprintf('\n Lehmer L_{100xn} \n');
 fprintf('%-5s %-20s %-20s\n','n','||QR-L||_F','||Q''Q-I||_F');
 for n = 10:10:100
     ri = (1:100).'; ci = 1:n;
@@ -102,8 +95,7 @@ for n = 10:10:100
     fprintf('%-5d %-20.6e %-20.6e\n', n, ...
             norm(Q*R-A,'fro'), norm(Q'*Q-eye(100),'fro'));
 end
-
-fprintf('\n--- Hilbert H_{100xn} ---\n');
+fprintf('\n Hilbert H_{100xn}\n');
 fprintf('%-5s %-20s %-20s\n','n','||QR-H||_F','||Q''Q-I||_F');
 for n = 10:10:100
     ri = (1:100).'; ci = 1:n;
@@ -112,21 +104,13 @@ for n = 10:10:100
     fprintf('%-5d %-20.6e %-20.6e\n', n, ...
             norm(Q*R-A,'fro'), norm(Q'*Q-eye(100),'fro'));
 end
-
-%% ================================================================
-%  QUESTÃO 3 – Compressão de Imagens via SVD
-%% ================================================================
-% Qualidade:  q = sum(sigma_i^2, i=1..p) / sum(sigma_i^2, i=1..r)  x 100%
-%
-% Substitua os nomes de ficheiro pelos seus ficheiros de imagem.
-
-img_gray_file  = 'cameraman.tif'; 
-img_color_file = 'peppers.png';
-pct_keep       = [1, 5, 10, 25, 50, 75];
-
-%% 3a) Imagem a preto e branco ------------------------------------------
-fprintf('\n=== QUESTÃO 3a – Imagem grayscale ===\n');
-A_raw = imread(img_gray_file);
+%3 – Compressão de Imagens via SVD
+pct_keep = [1, 5, 10, 25, 50, 75];
+%% a) Imagem a preto e branco
+fprintf('\n 3a – Imagem grayscale \n');
+[file_gray, path_gray] = uigetfile({'*.png;*.jpg;*.jpeg;*.tif;*.bmp', 'Imagens'}, 'Selecione a imagem a preto e branco');
+if isequal(file_gray, 0), error('Seleção de imagem P&B cancelada.'); end
+A_raw = imread(fullfile(path_gray, file_gray));
 if ndims(A_raw)==3, A_raw = rgb2gray(A_raw); end
 A = double(A_raw);
 [m_g, n_g] = size(A);
@@ -142,23 +126,24 @@ for idx = 1:length(pct_keep)
     p   = max(1, round(pct_keep(idx)/100*r));
     Ap  = U(:,1:p)*diag(sv(1:p))*V(:,1:p)';
     q   = sum(sv(1:p).^2)/E_tot*100;
-    stor = (m_g + n_g + 1)*p / (m_g*n_g);   % storage ratio vs original
+    stor = (m_g + n_g + 1)*p / (m_g*n_g);  
     fprintf('%-10.0f %-8d %-12.4f %-14.6f\n', pct_keep(idx), p, q, stor);
     subplot(2,4,idx+1); imshow(uint8(Ap));
     title(sprintf('%d%% SV (q=%.1f%%)', pct_keep(idx), q));
 end
 sgtitle('Compressão SVD – Grayscale');
-
-%% 3b) Imagem a cores ---------------------------------------------------
-fprintf('\n=== QUESTÃO 3b – Imagem a cores ===\n');
-A_raw = imread(img_color_file);
+%% 3b) Imagem a cores
+fprintf('\n 3b – Imagem a cores \n');
+[file_color, path_color] = uigetfile({'*.png;*.jpg;*.jpeg;*.tif;*.bmp', 'Imagens'}, 'Selecione a imagem a cores');
+if isequal(file_color, 0), error('Seleção de imagem a cores cancelada.'); end
+A_raw = imread(fullfile(path_color, file_color));
 if ndims(A_raw)~=3, error('Esperada imagem RGB.'); end
 [m_c,n_c,~] = size(A_raw);
 fprintf('%-10s %-8s %-12s %-12s %-12s %-12s\n', ...
         '% SV kept','p','Q_R %','Q_G %','Q_B %','Q_mean %');
 figure('Name','Q3b – Colour');
 subplot(2,4,1); imshow(A_raw); title('Original');
-% Pre-compute SVDs for each channel
+% svd de cada canal
 Uch = cell(3,1); Svch = cell(3,1); Vch = cell(3,1); Etot_ch = zeros(3,1);
 for c=1:3
     Ac = double(A_raw(:,:,c));
@@ -183,17 +168,12 @@ for idx = 1:length(pct_keep)
     title(sprintf('%d%% SV (Q≈%.1f%%)',pct_keep(idx),mean(q_ch)));
 end
 sgtitle('Compressão SVD – Cores');
-
-%% ================================================================
 %  QUESTÃO 4 – Número de condição via método das potências
-%% ================================================================
 % cond_2(A) = |lambda|_max / |lambda|_min   (A simétrica)
 % |lambda|_max : método das potências
 % |lambda|_min : método das potências inversas (LU, sem inverter A)
-
 tol4    = 1e-10;
 maxit4  = 5000;
-
 %% 4b-i) Hilbert -------------------------------------------------------
 fprintf('\n=== QUESTÃO 4b-i – Hilbert Hn ===\n');
 fprintf('%-5s %-20s %-20s %-20s %-8s %-8s\n', ...
@@ -209,7 +189,6 @@ for n = 5:14
     fprintf('%-5d %-20.6e %-20.6e %-20.6e %-8d %-8d\n', ...
             n, c2, c2_ml, abs(c2-c2_ml)/c2_ml, itM, itm);
 end
-
 %% 4b-ii) Lehmer -------------------------------------------------------
 fprintf('\n=== QUESTÃO 4b-ii – Lehmer Ln ===\n');
 fprintf('%-6s %-20s %-20s %-20s %-8s %-8s\n', ...
@@ -230,7 +209,6 @@ for n = [10, 100, 200, 300, 400, 500]
                 n, c2, '(omitido)', '(omitido)', itM, itm);
     end
 end
-
 %% 4c) Gráfico de convergência – exemplo com H_8 -----------------------
 % Ilustra a convergência do método das potências (máximo e mínimo) para H_8.
 fprintf('\n=== QUESTÃO 4 – Convergência para H_8 ===\n');
@@ -239,25 +217,20 @@ A_plt = hilb(n_plt);
 x0    = ones(n_plt,1);
 [lam_max_plt, ~, itM_plt, lhist_max] = pow_max(A_plt, x0, tol4, maxit4);
 [lam_min_plt, ~, itm_plt, lhist_min] = pow_min(A_plt, x0, tol4, maxit4);
-
 figure('Name','Q4 – Convergence H_8');
 subplot(1,2,1);
 semilogy(1:itM_plt, abs(lhist_max(1:itM_plt) - lam_max_plt), 'b-o', 'MarkerSize', 4);
 xlabel('Iteração'); ylabel('|\lambda^{(k)} - \lambda_{max}|');
 title(sprintf('Método das potências – H_{%d}', n_plt)); grid on;
-
 subplot(1,2,2);
 semilogy(1:itm_plt, abs(lhist_min(1:itm_plt) - lam_min_plt), 'r-s', 'MarkerSize', 4);
 xlabel('Iteração'); ylabel('|\lambda^{(k)} - \lambda_{min}|');
 title(sprintf('Método das potências inversas – H_{%d}', n_plt)); grid on;
-
 sgtitle('Convergência dos métodos das potências');
-
 %% ================================================================
 %  FUNÇÕES LOCAIS
 %  (devem ficar após o fim do corpo do script)
 %% ================================================================
-
 % ----------------------------------------------------------------
 function [X, iter, err_hist, res_hist] = ns_iterate(A, maxIter, tol)
 % NS_ITERATE  Newton-Schulz iteration.  X_{k+1} = 2Xk - Xk*A*Xk
@@ -268,7 +241,6 @@ function [X, iter, err_hist, res_hist] = ns_iterate(A, maxIter, tol)
     err_hist = NaN(maxIter+1,1);
     res_hist = zeros(maxIter+1,1);
     res_hist(1) = norm(I_ - A*X,'fro');
-
     for k = 1:maxIter
         X_new = 2*X - X*A*X;
         step  = norm(X_new - X,'fro');
@@ -288,7 +260,6 @@ function [X, iter, err_hist, res_hist] = ns_iterate(A, maxIter, tol)
     res_hist = res_hist(1:maxIter+1);
     warning('ns_iterate: max iterations reached.');
 end
-
 % ----------------------------------------------------------------
 function p = comp_conv_order(res_hist)
 % COMP_CONV_ORDER  Ordem de convergência computacional:
@@ -303,7 +274,6 @@ function p = comp_conv_order(res_hist)
         if abs(den) < eps, p(k-1) = NaN; else, p(k-1) = num/den; end
     end
 end
-
 % ----------------------------------------------------------------
 function A = tridiag_An(n)
 % TRIDIAG_AN  Matriz tridiagonal n x n do enunciado (d=10 excepto A(1,1)=9)
@@ -311,14 +281,12 @@ function A = tridiag_An(n)
     od   = 3*ones(n-1,1);
     A    = diag(d) + diag(od,1) + diag(od,-1);
 end
-
 % ----------------------------------------------------------------
 function L = lehmer(n)
 % LEHMER  Matriz de Lehmer n x n:  L(i,j) = min(i,j)/max(i,j)
     r = (1:n).'; c = 1:n;
     L = min(r,c) ./ max(r,c);
 end
-
 % ----------------------------------------------------------------
 function [Q, R] = house_qr(A)
 % HOUSE_QR  Decomposição QR por reflexões de Householder.
@@ -330,7 +298,6 @@ function [Q, R] = house_qr(A)
     [m, n_] = size(A);
     R  = A;
     Qt = eye(m);      % acumula Q^T
-
     for k = 1:n_
         x   = R(k:m, k);
         s   = sign(x(1)); if s==0, s=1; end
@@ -339,7 +306,6 @@ function [Q, R] = house_qr(A)
         nv  = norm(v);
         if nv < eps*norm(x), continue; end
         v   = v/nv;
-
         R(k:m,  k:n_) = R(k:m,  k:n_) - 2*v*(v.'*R(k:m,  k:n_));
         Qt(k:m, :)    = Qt(k:m, :)     - 2*v*(v.'*Qt(k:m, :));
     end
@@ -347,7 +313,6 @@ function [Q, R] = house_qr(A)
     for k=1:n_, R(k+1:m,k)=0; end
     Q = Qt.';
 end
-
 % ----------------------------------------------------------------
 function [lam, x, iter, lam_hist] = pow_max(A, x0, tol, maxit)
 % POW_MAX  Método das potências: valor próprio dominante de A.
@@ -372,7 +337,6 @@ function [lam, x, iter, lam_hist] = pow_max(A, x0, tol, maxit)
     lam_hist = lam_hist(1:maxit);
     warning('pow_max: max iterations reached.');
 end
-
 % ----------------------------------------------------------------
 function [lam_min, x, iter, lam_hist] = pow_min(A, x0, tol, maxit)
 % POW_MIN  Método das potências inversas: menor v.p. (em módulo) de A.
@@ -400,7 +364,6 @@ function [lam_min, x, iter, lam_hist] = pow_min(A, x0, tol, maxit)
     lam_hist = lam_hist(1:maxit);
     warning('pow_min: max iterations reached.');
 end
-
 % ----------------------------------------------------------------
 function print_ns_result(name, n, iter, errs, ress)
 % PRINT_NS_RESULT  Imprime sumário de uma corrida do Newton-Schulz.
