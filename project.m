@@ -171,9 +171,9 @@ tol4    = 1e-10;
 maxit4  = 5000;
 %% 4b-i Hilbert
 fprintf('\n 4b-i – Hilbert \n');
-fprintf('%-5s %-20s %-20s %-20s %-8s %-8s\n', ...
-        'n','cond2 (potências)','cond2 (MATLAB)','Erro relativo','it_max','it_min');
-fprintf('%s\n', repmat('-',1,88));
+fprintf('%-5s %-20s %-20s %-20s %-8s %-8s %-16s\n', ...
+        'n','cond2 (potências)','cond2 (MATLAB)','Erro relativo','it_max','it_min','taxa |λ2/λ1|');
+fprintf('%s\n', repmat('-',1,105));
 for n = 5:12 % <-- ALTERADO AQUI PARA 12 PARA EVITAR O COLAPSO DA MÁQUINA
     A  = hilb(n);
     x0 = ones(n,1);
@@ -181,14 +181,16 @@ for n = 5:12 % <-- ALTERADO AQUI PARA 12 PARA EVITAR O COLAPSO DA MÁQUINA
     [lam_min, ~, itm, ~] = pow_min(A, x0, tol4, maxit4);
     c2    = abs(lam_max)/abs(lam_min);
     c2_ml = cond(A);
-    fprintf('%-5d %-20.6e %-20.6e %-20.6e %-8d %-8d\n', ...
-            n, c2, c2_ml, abs(c2-c2_ml)/c2_ml, itM, itm);
+    lams  = sort(abs(eig(A)),'descend');
+    taxa  = lams(2)/lams(1);
+    fprintf('%-5d %-20.6e %-20.6e %-20.6e %-8d %-8d %-16.6e\n', ...
+            n, c2, c2_ml, abs(c2-c2_ml)/c2_ml, itM, itm, taxa);
 end
 %% 4b-ii Lehmer
 fprintf('\n 4b-ii – Lehmer\n');
-fprintf('%-6s %-20s %-20s %-20s %-8s %-8s\n', ...
-        'n','cond2 (potências)','cond2 (MATLAB)','Erro relativo','it_max','it_min');
-fprintf('%s\n', repmat('-',1,90));
+fprintf('%-6s %-20s %-20s %-20s %-8s %-8s %-16s\n', ...
+        'n','cond2 (potências)','cond2 (MATLAB)','Erro relativo','it_max','it_min','taxa |λ2/λ1|');
+fprintf('%s\n', repmat('-',1,107));
 for n = [10, 100, 200, 300, 400, 500]
     A  = lehmer(n);
     x0 = ones(n,1);
@@ -197,11 +199,13 @@ for n = [10, 100, 200, 300, 400, 500]
     c2 = abs(lam_max)/abs(lam_min);
     if n <= 200
         c2_ml = cond(A);
-        fprintf('%-6d %-20.6e %-20.6e %-20.6e %-8d %-8d\n', ...
-                n, c2, c2_ml, abs(c2-c2_ml)/c2_ml, itM, itm);
+        lams  = sort(abs(eig(A)),'descend');
+        taxa  = lams(2)/lams(1);
+        fprintf('%-6d %-20.6e %-20.6e %-20.6e %-8d %-8d %-16.6e\n', ...
+                n, c2, c2_ml, abs(c2-c2_ml)/c2_ml, itM, itm, taxa);
     else
-        fprintf('%-6d %-20.6e %-20s %-20s %-8d %-8d\n', ...
-                n, c2, '(omitido)', '(omitido)', itM, itm);
+        fprintf('%-6d %-20.6e %-20s %-20s %-8d %-8d %-16s\n', ...
+                n, c2, '(omitido)', '(omitido)', itM, itm, '(omitido)');
     end
 end
 %% 4c) Gráfico de convergência – exemplo com H_8
@@ -213,14 +217,27 @@ x0    = ones(n_plt,1);
 [lam_min_plt, ~, itm_plt, lhist_min] = pow_min(A_plt, x0, tol4, maxit4);
 
 f4 = figure('Name','Q4 – Convergence H_8', 'Position', [100, 100, 900, 400]);
+lams_plt = sort(abs(eig(A_plt)),'descend');
+taxa_max = lams_plt(2)/lams_plt(1);
+taxa_min = lams_plt(end-1)/lams_plt(end);
 subplot(1,2,1);
-semilogy(1:itM_plt, abs(lhist_max(1:itM_plt) - lam_max_plt), 'b-o', 'MarkerSize', 4);
+erros_max = abs(lhist_max(1:itM_plt) - lam_max_plt);
+semilogy(1:itM_plt, erros_max, 'b-o', 'MarkerSize', 4);
+hold on;
+semilogy(1:itM_plt, erros_max(1)*taxa_max.^((1:itM_plt)-1), 'b--', 'LineWidth', 1.2);
 xlabel('Iteração'); ylabel('|\lambda^{(k)} - \lambda_{max}|');
-title(sprintf('Método das potências – H_{%d}', n_plt)); grid on;
+title(sprintf('Método das potências – H_{%d}', n_plt));
+legend('Erro','Ref. taxa = |\lambda_2/\lambda_1|','Location','southwest');
+grid on;
 subplot(1,2,2);
-semilogy(1:itm_plt, abs(lhist_min(1:itm_plt) - lam_min_plt), 'r-s', 'MarkerSize', 4);
+erros_min = abs(lhist_min(1:itm_plt) - lam_min_plt);
+semilogy(1:itm_plt, erros_min, 'r-s', 'MarkerSize', 4);
+hold on;
+semilogy(1:itm_plt, erros_min(1)*taxa_min.^((1:itm_plt)-1), 'r--', 'LineWidth', 1.2);
 xlabel('Iteração'); ylabel('|\lambda^{(k)} - \lambda_{min}|');
-title(sprintf('Método das potências inversas – H_{%d}', n_plt)); grid on;
+title(sprintf('Método das potências inversas – H_{%d}', n_plt));
+legend('Erro','Ref. taxa = |\lambda_{n-1}/\lambda_n|','Location','southwest');
+grid on;
 sgtitle('Convergência dos métodos das potências');
 exportgraphics(f4, 'Q4_Convergencia_H8.png', 'Resolution', 300); % <-- GUARDA A IMAGEM AQUI
 
